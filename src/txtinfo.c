@@ -30,7 +30,7 @@ int count_words(const char* text) {
 	int count = 0;
 	while (*text != '\0') {
 		if (*text == 32 || *text == 10) {
-			bool was = (*text == 32) ? true : false;
+			bool was = (*text == 32);
 			if (*text == 10)
 				text++;
 			while (*text == 32)
@@ -72,11 +72,12 @@ char* readfile(const char* path, int* filesize) {
 	fseek(fp, 0, SEEK_END);
 	
 	*filesize = ftell(fp);
-	char* content = (char*)malloc(*filesize);
+	char* content = (char*)malloc(*filesize + 1);
 
 	fseek(fp, 0, SEEK_SET);
 	for (long i = 0; i < *filesize; i++)
 		content[i] = fgetc(fp);
+	content[*filesize] = '\0';
 	return content;
 }
 

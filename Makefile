@@ -1,6 +1,9 @@
-all: bin/txtinfo bin/genpassw
+TEMP	:= $(subst src,bin,$(wildcard src/*.c))
+TARGETS	:= $(TEMP:.c=.elf)
 
-bin/%: src/%.c
+all: $(TARGETS)
+
+bin/%.elf: src/%.c
 	gcc -Wall -o $@ $<
 
 clean:
