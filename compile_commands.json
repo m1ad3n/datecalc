@@ -1,0 +1,62 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wno-format",
+      "-o",
+      "bin/date_calculator.elf",
+      "src/date_calculator.c"
+    ],
+    "directory": "/projects/fun",
+    "file": "/projects/fun/src/date_calculator.c",
+    "output": "/projects/fun/bin/date_calculator.elf"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wno-format",
+      "-o",
+      "bin/genpassw.elf",
+      "src/genpassw.c"
+    ],
+    "directory": "/projects/fun",
+    "file": "/projects/fun/src/genpassw.c",
+    "output": "/projects/fun/bin/genpassw.elf"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wno-format",
+      "-o",
+      "bin/txtinfo.elf",
+      "src/txtinfo.c"
+    ],
+    "directory": "/projects/fun",
+    "file": "/projects/fun/src/txtinfo.c",
+    "output": "/projects/fun/bin/txtinfo.elf"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-Wno-format",
+      "-o",
+      "bin/txtinfo_gpt.elf",
+      "src/txtinfo_gpt.c"
+    ],
+    "directory": "/projects/fun",
+    "file": "/projects/fun/src/txtinfo_gpt.c",
+    "output": "/projects/fun/bin/txtinfo_gpt.elf"
+  }
+]
