@@ -13,10 +13,6 @@
 #define BOX_RX "\u252B"
 
 #define BOX_TITLE
-#define BOX_TOP_SPACE
-
-#define DISPLAY_BOTH_DATES
-#define DISPLAY_TIME
 
 struct dts {
 	int seconds;
@@ -40,6 +36,7 @@ void date_decrease(struct dts* date_s, int days);
 
 int how_many_digits(int n);
 int string_len(char* s);
+int string_contains(char* s, char ch);
 
 void box_date_time(struct dts dts_s, int year_digits);
 void tokenize_input(char* inp_str, int* days, int* seconds);
@@ -52,14 +49,26 @@ int main(int argc, char* argv[]) {
 	char input_str[30] = {0};
 	char to_add_input[50] = {0};
 
-	if (argc < 2) {
-		printf("date > ");
-		fgets(input_str, 30, stdin);
-	}
-	else {
+	char display_time = 0;
+	char display_both_dates = 0;
+
+	if (argc > 1) {
 		for (int i = 1; i < argc; i++) {
-			strcat(to_add_input, argv[i]);
+			if (string_contains(argv[i], 't')) {
+				display_time++;
+			}
+			if (string_contains(argv[i], 'b')) {
+				display_both_dates++;
+			}
+			else {
+				strcat(to_add_input, argv[i]);
+			}
 		}
+	}
+
+	if (string_len(to_add_input) < 2) {
+		printf("%s date > ", BOX_VR);
+		fgets(input_str, 30, stdin);
 	}
 
 	if (string_len(input_str) >= 2) {
@@ -80,32 +89,30 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (!string_len(to_add_input)) {
-		printf("to add > ");
+		printf("%s add > ", BOX_VR);
 		fgets(to_add_input, 50, stdin);	
 	}
 
 	int days_to_add = 0, secs_to_add = 0;
 	tokenize_input(to_add_input, &days_to_add, &secs_to_add);
 
-#if defined(DISPLAY_BOTH_DATES)
-	box_date_time(main_dts, how_many_digits(main_dts.year));
-#endif
+	if (display_both_dates)
+		box_date_time(main_dts, how_many_digits(main_dts.year));
 
-#if defined(DISPLAY_TIME)
 	struct timespec start, end;
-	clock_gettime(CLOCK_REALTIME, &start);
-#endif
+	if (display_time) {
+		clock_gettime(CLOCK_REALTIME, &start);
+	}
 
 	time_update(&main_dts, secs_to_add);
 	date_update(&main_dts, days_to_add);
 
-#if defined(DISPLAY_TIME)
-	clock_gettime(CLOCK_REALTIME, &end);
-	printf("%s TIME: %dns\n", BOX_VR, end.tv_nsec - start.tv_nsec);
-#endif
+	if (display_time) {
+		clock_gettime(CLOCK_REALTIME, &end);
+		printf("%s TIME: %dns\n", BOX_VR, end.tv_nsec - start.tv_nsec);
+	}
 
 	box_date_time(main_dts, how_many_digits(main_dts.year));
-
 	return 0;
 }
 
@@ -118,7 +125,14 @@ int string_len(char* s) {
 	return count;
 }
 
+int string_contains(char* s, char ch) {
+	while (*s != '\0')
+		if (*s++ == ch) return 1;
+	return 0;
+}
+
 int how_many_digits(int n) {
+	if (n < 0) n = ~n + 1;
 	int count = 0;
 	while (n) {
 		n /= 10;
@@ -141,9 +155,11 @@ void box_date_time(
 	int year_digits
 ) {
 	int hr_max;
+	if (year_digits == 0) year_digits++;
+	if (dts_s.year < 0) year_digits += 3;
+
 	if (year_digits <= 2) hr_max = 10;
 	else hr_max = 9 + year_digits - 1;
-	if (!year_digits) year_digits++;
 
 	fputs(BOX_LU, stdout);
 	for (int i = 0; i < hr_max; i++)
@@ -167,10 +183,13 @@ void box_date_time(
 	puts(BOX_RX);
 #endif
 
-	printf("%s %02d.%02d.%d",
+	printf("%s %02d.%02d.",
 		BOX_VR,
-		dts_s.day, dts_s.month, dts_s.year
+		dts_s.day, dts_s.month
 	);
+
+	if (dts_s.year < 0) printf("%d BC", ~dts_s.year + 1);
+	else printf("%d", dts_s.year);
 
 	for (int i = 0; i < (hr_max - (7 + year_digits)); i++)
 		putc(32, stdout);
