@@ -1,11 +1,6 @@
-CFLAGS	:= -Wall -Wextra -Wno-format
-TEMP	:= $(subst src,bin,$(wildcard src/*.c))
-TARGETS	:= $(TEMP:.c=.elf)
+CFLAGS	:= -Wall -Wextra -Wno-format -O3
 
-all: $(TARGETS)
+all: datecalc
 
-bin/%.elf: src/%.c
-	gcc $(CFLAGS) -o $@ $<
-
-clean:
-	@rm -rvf bin/**
+%: %.c
+	gcc $(CFLAGS) -s -o $@ $<
