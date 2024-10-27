@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-#define ARROW  "\u27A4"
+#define ARROW  "\u27A4  "
 
 #define BOX_HR "\u2501"
 #define BOX_VR "\u2503"
@@ -15,11 +15,19 @@
 #define BOX_LX "\u2523"
 #define BOX_RX "\u252B"
 
-#define BOX_VR_HALF_UP "\u2579"
-#define BOX_VR_HALF_DOWN "\u257B"
+#define BOX_VR_HALF_UP 		"\u2579"
+#define BOX_VR_HALF_DOWN 	"\u257B"
 
+
+/* prints outs the DH MM YS as the box title */
 // #define BOX_TITLE
 // #define BOX_TOP_SPACE
+
+/*
+	uncomment if you want date to include and use year zero
+	example 24.5.0 is valid date format
+*/
+// #define YEAR_ZERO
 
 /////////////////////////////////////////////////////////
 
@@ -52,15 +60,14 @@ void time_update(struct dts* time_s, int secs);
 void time_increase(struct dts* time_s, int secs);
 void time_decrease(struct dts* time_s, int secs);
 
+bool leap_year(int year);
+int days_in_month(int month, int year);
 bool date_validate(struct dts date_s);
 void date_update(struct dts* date_s, int days);
 void date_increase(struct dts* date_s, int days);
 void date_decrease(struct dts* date_s, int days);
 
-int how_many_digits(int n);
-int string_contains(char* s, char ch);
-bool in_arr(int n, int* arr, int arr_size);
-
+bool in_arr(int n, const int* arr, size_t arr_size);
 void box_date_time(struct dts dts_s);
 void tokenize_input(char* inp_str, int* days, int* seconds);
 void from_tm_to_dts(struct dts* dts_s, struct tm* tm_s);
@@ -77,12 +84,12 @@ int main(int argc, char* argv[]) {
 	if (argc > 1) {
 		for (int i = 1; i < argc; i++) {
 			if (*argv[i] == '-') {
-				if (string_contains(argv[i], 't')) main_dts.pref |= time_took;
-				if (string_contains(argv[i], 'a')) main_dts.pref |= both_dates;
-				if (string_contains(argv[i], 'y')) main_dts.pref |= year_zero;
-				if (string_contains(argv[i], 'k')) main_dts.pref |= weekday;
-				if (string_contains(argv[i], 'f')) main_dts.pref |= full_weekday;
-				if (string_contains(argv[i], 'b')) main_dts.pref |= left_side_only;
+				if (strchr(argv[i], 't')) main_dts.pref |= time_took;
+				if (strchr(argv[i], 'a')) main_dts.pref |= both_dates;
+				if (strchr(argv[i], 'y')) main_dts.pref |= year_zero;
+				if (strchr(argv[i], 'k')) main_dts.pref |= weekday;
+				if (strchr(argv[i], 'f')) main_dts.pref |= full_weekday;
+				if (strchr(argv[i], 'b')) main_dts.pref |= left_side_only;
 			}
 			else {
 				strcat(to_add_input, argv[i]);
@@ -91,21 +98,25 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (main_dts.pref & left_side_only) {
-		fputs(BOX_LU, stdout);
-		puts(BOX_HR);
+		printf(BOX_LU);
+		printf(BOX_HR "\n");
 	}
 
 	if (strlen(to_add_input) < 2) {
-		printf("%s DATE %s  ", BOX_VR, ARROW);
+		printf(BOX_VR " DATE " ARROW );
 		fgets(input_str, 30, stdin);
 	}
 
 	if (strlen(input_str) >= 2) {
-		sscanf(input_str,
+		int sc = sscanf(input_str,
 			"%2d%*[^0123456789]%2d%*[^0123456789]%d%*[^0123456789]%2d%*[^0123456789]%2d%*[^0123456789]%2d",
 			&main_dts.day, &main_dts.month, &main_dts.year,
 			&main_dts.hours, &main_dts.minutes, &main_dts.seconds
 		);
+		if (sc != 1) {
+			printf(BOX_VR " BAD FORMAT\n");
+			return -1;
+		}
 	}
 	else {
 		time_t rawtime;
@@ -118,12 +129,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (!date_validate(main_dts) || !time_validate(main_dts)) {
-		printf("%s BAD FORMAT\n", BOX_VR);
+		printf(BOX_VR " BAD FORMAT\n");
 		return 1;
 	}
 
 	if (strlen(to_add_input) < 2) {
-		printf("%s ADD  %s  ", BOX_VR, ARROW);
+		printf(BOX_VR " ADD  " ARROW);
 		fgets(to_add_input, 50, stdin);	
 	}
 
@@ -141,7 +152,7 @@ int main(int argc, char* argv[]) {
 
 	if (main_dts.pref & time_took) {
 		clock_gettime(CLOCK_REALTIME, &end);
-		printf("%s TIME %s  %ldns\n", BOX_VR, ARROW, end.tv_nsec - start.tv_nsec);
+		printf(BOX_VR " TIME " ARROW " %ldns\n", end.tv_nsec - start.tv_nsec);
 	}
 
 	if (main_dts.pref & both_dates) {
@@ -150,8 +161,7 @@ int main(int argc, char* argv[]) {
 	box_date_time(new_dts);
 
 	if (main_dts.pref & left_side_only) {
-		fputs(BOX_LD, stdout);
-		puts(BOX_HR);
+		printf(BOX_LD BOX_HR "\n");
 	}
 
 	return 0;
@@ -159,28 +169,8 @@ int main(int argc, char* argv[]) {
 
 /////////////////////////////////////////////////////////
 
-int string_contains(char* s, char ch) {
-	while (*s != '\0')
-		if (*s++ == ch) return 1;
-	return 0;
-}
-
-/////////////////////////////////////////////////////////
-
-int how_many_digits(int n) {
-	if (n < 0) n = ~n + 1;
-	int count = 0;
-	while (n) {
-		n /= 10;
-		count++;
-	}
-	return count;
-}
-
-/////////////////////////////////////////////////////////
-
-bool in_arr(int n, int* arr, int arr_size) {
-	for (int i = 0; i < arr_size; i++) {
+bool in_arr(int n, const int* arr, size_t arr_size) {
+	for (size_t i = 0; i < arr_size; i++) {
 		if (arr[i] == n) {
 			return true;
 		}
@@ -200,15 +190,13 @@ void from_tm_to_dts(struct dts* dts_s, struct tm* tm_s) {
 }
 
 char* get_weekday(int wd) {
-	char* weekdays[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+	static char* weekdays[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 	return weekdays[wd];
 }
 
 /////////////////////////////////////////////////////////
 
-void box_date_time(
-	struct dts dts_s
-) {
+void box_date_time(struct dts dts_s) {
 
 	char date_string[50] = {0};
 	char tmp_str[30] = {0};
@@ -216,6 +204,7 @@ void box_date_time(
 
 	if ((dts_s.pref & weekday) || (dts_s.pref & full_weekday)) {
 		int d = dts_s.day, m = dts_s.month, y = dts_s.year;
+		
 		int wd = (d += m < 3 ? y-- : y - 2, 23 * m / 9 + d + 4 + y/4 - y/100 + y/400) % 7; 
 		strncat(date_string, get_weekday(wd), (dts_s.pref & full_weekday) ? 9 : 3);
 		strcat(date_string, ", ");
@@ -228,7 +217,7 @@ void box_date_time(
 
 	if (dts_s.pref & left_side_only) {
 		sprintf(tmp_str, ", %02d:%02d:%02d",
-			(int)dts_s.hours, (int)dts_s.minutes, (int)dts_s.seconds
+			dts_s.hours, dts_s.minutes, dts_s.seconds
 		);
 		strcat(date_string, tmp_str);
 	}
@@ -239,75 +228,71 @@ void box_date_time(
 	int hr_max = (strlen(date_string) < 10) ? 10 : strlen(date_string);
 
 	if (!(dts_s.pref & left_side_only)) {
-		fputs(BOX_LU, stdout);
+		printf(BOX_LU);
 		for (int i = 0; i < hr_max; i++)
-			fputs(BOX_HR, stdout);
-		puts(BOX_RU);
+			printf(BOX_HR);
+		printf(BOX_RU "\n");
 	}
 
 #if defined(BOX_TITLE)
-	printf("%s DH MM YS",
-		BOX_VR
-	);
+	if (!(dts_s.pref & left_side_only)) {
+		printf("%s DH MM YS",
+			BOX_VR
+		);
 
-	for (int i = 0; i < (hr_max - 9); i++)
-		putc(32, stdout);
+		for (int i = 0; i < (hr_max - 9); i++)
+			printf(" ");
 
-	if (!(dts_s.pref & left_side_only))
-		fputs(BOX_VR, stdout);
-	putchar(10);
+		if (!(dts_s.pref & left_side_only))
+			printf(BOX_VR);
+		printf("\n");
+	}
 #endif
 
 #if defined(BOX_TITLE) || defined(BOX_TOP_SPACE)
 	if (!(dts_s.pref & left_side_only)) {
-		fputs(BOX_LX, stdout);
+		printf(BOX_LX);
 		for (int i = 0; i < hr_max; i++)
-			fputs(BOX_HR, stdout);
-		fputs(BOX_RX, stdout);
+			printf(BOX_HR);
+		printf(BOX_RX "\n");
 	}
-	putchar(10)
 #endif
 
-	fputs(BOX_VR, stdout);
-	fputs(date_string, stdout);
+	printf(BOX_VR "%s", date_string);
 
 	for (int i = 0; i < (int)(hr_max - strlen(date_string)); i++)
-		putchar(32);
+		printf(" ");
 
 	if (!(dts_s.pref & left_side_only)) {
-		fputs(BOX_VR, stdout);
+		printf(BOX_VR);
 	}
-	putchar(10);
+	printf("\n");
 
 	if (!(dts_s.pref & left_side_only)) {
-		printf("%s %02d:%02d:%02d",
-			BOX_VR,
-			(int)dts_s.hours, (int)dts_s.minutes, (int)dts_s.seconds
+		printf(BOX_VR " %02d:%02d:%02d",
+			dts_s.hours, dts_s.minutes, dts_s.seconds
 		);
 
 		for (int i = 0; i < (hr_max - 9); i++)
-			putc(32, stdout);
+			printf(" ");
 	}
 
 
 	if (!(dts_s.pref & left_side_only)) {
-		puts(BOX_VR);
+		printf(BOX_VR "\n");
 	}
 	
 	if (!(dts_s.pref & left_side_only)) {
-		fputs(BOX_LD, stdout);
+		printf(BOX_LD);
 		for (int i = 0; i < hr_max; i++)
-			fputs(BOX_HR, stdout);
-		puts(BOX_RD);
+			printf(BOX_HR);
+		printf(BOX_RD "\n");
 	}
 }
 
 /////////////////////////////////////////////////////////
 
-void tokenize_input (
-	char* inp_str,
-	int* days, int* seconds
-) {
+void tokenize_input(char* inp_str, int* days, int* seconds) {
 
 	int sum = 0;
 	char op = 0;
@@ -322,18 +307,23 @@ void tokenize_input (
 		case 'w':
 			*days += (sum * 7);
 			break;
+
 		case 'd':
 			*days += sum;
 			break;
+
 		case 'h':
 			*seconds += (sum * 3600);
 			break;
+
 		case 'm':
 			*seconds += (sum * 60);
 			break;
+
 		case 's':
 			*seconds += sum;
 			break;
+
 		}
 
 		if (*inp_str >= '0' && *inp_str <= '9') {
@@ -381,22 +371,22 @@ void time_decrease(struct dts* time_s, int secs) {
 	int carryd = 0;
 	int total_seconds = time_s->hours * 3600 + time_s->minutes * 60 + time_s->seconds;
 
-    total_seconds -= secs;
-    if (total_seconds < 0) {
-        carryd = (abs(total_seconds) / 86401) + 1;
-        total_seconds = (86400 + (total_seconds % 86400)) % 86400;
-    } else {
-        carryd = 0;
-    }
-    
-    time_s->hours = total_seconds / 3600;
-    time_s->minutes = (total_seconds % 3600) / 60;
-    time_s->seconds = total_seconds % 60;
+	total_seconds -= secs;
+	if (total_seconds < 0) {
+		carryd = (abs(total_seconds) / 86401) + 1;
+		total_seconds = (86400 + (total_seconds % 86400)) % 86400;
+	} else {
+		carryd = 0;
+	}
+  
+	time_s->hours = total_seconds / 3600;
+	time_s->minutes = (total_seconds % 3600) / 60;
+	time_s->seconds = total_seconds % 60;
 
-    if (time_s->hours >= 24) {
-        carryd += time_s->hours / 24;
-        time_s->hours = time_s->hours % 24;
-    }
+	if (time_s->hours >= 24) {
+		carryd += time_s->hours / 24;
+		time_s->hours = time_s->hours % 24;
+	}
 
 	date_decrease(time_s, carryd);
 }
@@ -409,17 +399,26 @@ void time_update(struct dts* time_s, int secs) {
 
 /////////////////////////////////////////////////////////
 
-bool month_with_31(int month) {
-	int months[7] = {1, 3, 5, 7, 8, 10, 12};
-	return in_arr(month, months, 7);
+int days_in_month(int month, int year) {
+	switch (month) {
+	case 1: case 3: case 5: case 7: case 8: case 10: case 12:
+		return 31;
+	case 4: case 6: case 9: case 11:
+		return 30;
+	case 2:
+		if (leap_year(year)) return 29;
+		return 28;
+	}
+	return 0;
 }
 
 /////////////////////////////////////////////////////////
 
 bool date_validate(struct dts date_s) {
-	if (date_s.day <= 0 || date_s.day > 31) return false;
-	if (date_s.month <= 0 || date_s.month > 12) return false;
-	if (!month_with_31(date_s.month) && date_s.day > 30) return false;
+	if (date_s.day <= 0
+			|| date_s.day > days_in_month(date_s.month, date_s.year)
+			|| !days_in_month(date_s.month, date_s.year))
+		return false;
 
 	if (!(date_s.pref & year_zero) && date_s.year == 0) return false;
 
@@ -429,56 +428,28 @@ bool date_validate(struct dts date_s) {
 /////////////////////////////////////////////////////////
 
 void date_update(struct dts* date_s, int days) {
-	(days > 0) ? date_increase(date_s, days) : date_decrease(date_s, ~days + 1);
+	(days > 0) ? date_increase(date_s, days) : date_decrease(date_s, -days);
+}
+
+/////////////////////////////////////////////////////////
+
+bool leap_year(int year) {
+	return (year % 400 == 0) || ((year % 100 != 0) && (year % 4 == 0));
 }
 
 /////////////////////////////////////////////////////////
 
 void date_increase(struct dts* date_s, int days) {
 	for (int i = 0; i < days; i++) {
-		date_s->day++;
-		if (date_s->day < 28) continue;
 
-		if (date_s->month == 2) {
-			if ((date_s->year % 400 == 0) ||
-				((date_s->year % 100 != 0) &&
-				(date_s->year % 4 == 0)))
-			{
-				if (date_s->day > 29) {
-					date_s->day = 1;
-					date_s->month++;
-				}
-			}
-			else {
-				if (date_s->day > 28) {
-					date_s->day = 1;
-					date_s->month++;
-				}
+		if (++date_s->day > days_in_month(date_s->month, date_s->year)) {
+			date_s->day = 1;
+			if (++date_s->month > 12) {
+				date_s->month = 1;
+				date_s->year++;
 			}
 		}
-		else if (month_with_31(date_s->month)) {
-			if (date_s->day > 31) {
-				date_s->day = 1;
-				if (date_s->month == 12) {
-					date_s->year++;
-					date_s->month = 1;
 
-					#if !defined(YEAR_ZERO)
-					if (date_s->year == 0)
-						date_s->year++;
-					#endif
-				}
-				else {
-					date_s->month++;
-				}
-			}
-		}
-		else {
-			if (date_s->day > 30) {
-				date_s->day = 1;
-				date_s->month++;
-			}
-		}
 	}
 }
 
@@ -486,42 +457,20 @@ void date_increase(struct dts* date_s, int days) {
 
 void date_decrease(struct dts* date_s, int days) {
 	for (int i = 0; i < days; i++) {
-		date_s->day--;
-		if (date_s->day > 0) continue;
 
-		switch (date_s->month) {
-		case 1: case 2: case 4: case 6: case 8: case 9: case 11:
-			date_s->day = 31;
-			if (date_s->month == 1) {
-				date_s->year--;
+		if (!--date_s->day) {
+			if (!--date_s->month) {
 				date_s->month = 12;
+				date_s->year--;
 
 				#if !defined(YEAR_ZERO)
 				if (date_s->year == 0)
 					date_s->year--;
 				#endif
 			}
-			else {
-				date_s->month--;
-			}
-			break;
-
-		case 5: case 7: case 10: case 12:
-			date_s->day = 30;
-			date_s->month--;
-			break;
-
-		case 3:
-			date_s->day = 28;
-			date_s->month = 2;
-			if ((date_s->year % 400 == 0) ||
-				((date_s->year % 100 != 0) &&
-				(date_s->year % 4 == 0)))
-			{
-				date_s->day++;
-			}
-			break;
+			date_s->day = days_in_month(date_s->month, date_s->year);
 		}
+
 	}
 }
 
